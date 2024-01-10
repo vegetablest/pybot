@@ -56,12 +56,12 @@ def parse_python_markdown(source: str) -> str:
         raise ValueError
     else:
         # If match found, use the content within the backticks
-        json_str = match.group(1)
+        python_code_snippet = match.group(1)
 
     # Strip whitespace and newlines from the start and end
-    json_str = json_str.strip()
+    python_code_snippet = python_code_snippet.strip()
 
-    return json_str
+    return python_code_snippet
 
 
 class JsonOutputParser(AgentOutputParser):

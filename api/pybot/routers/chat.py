@@ -18,9 +18,9 @@ from pybot.config import settings
 from pybot.context import session_id
 from pybot.dependencies import (
     ChatMemory,
-    FakeCodeSandboxChain,
     Llm,
     MessageHistory,
+    ToolOpeningRemarksChain,
     UserIdHeader,
 )
 from pybot.models import Conversation as ORMConversation
@@ -41,7 +41,7 @@ async def chat(
     llm: Annotated[BaseLLM, Depends(Llm)],
     history: Annotated[RedisChatMessageHistory, Depends(MessageHistory)],
     memory: Annotated[BaseMemory, Depends(ChatMemory)],
-    preview_chain: Annotated[Chain, Depends(FakeCodeSandboxChain)],
+    opening_remarks_chain: Annotated[Chain, Depends(ToolOpeningRemarksChain)],
     userid: Annotated[str | None, UserIdHeader()] = None,
 ):
     await websocket.accept()
@@ -52,9 +52,7 @@ async def chat(
             session_id.set(f"{userid}:{message.conversation}")
             # file messages are only added to history, not passing to llm
             if message.type == "file":
-                lc_msg = message.to_lc()
-                history.add_message(lc_msg)
-                await preview_chain.acall(inputs={"input": message})
+                await opening_remarks_chain.acall(inputs={"input": message})
                 continue
             tools = [
                 CodeSandbox(

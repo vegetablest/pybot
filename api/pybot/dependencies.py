@@ -12,8 +12,9 @@ from langchain_core.memory import BaseMemory
 
 from pybot.callbacks import TracingLLMCallbackHandler
 from pybot.config import settings
-from pybot.fake_chain import FakeUseToolChain
-from pybot.history import ContextAwareMessageHistory
+from pybot.history import PybotMessageHistory
+from pybot.memory import PybotMemory
+from pybot.opening_remarks import OpeningRemarksChain
 from pybot.prompts.chatml import AI_PREFIX, AI_SUFFIX, HUMAN_PREFIX
 
 
@@ -35,8 +36,19 @@ def EmailHeader(alias: Optional[str] = None, **kwargs):
     return Header(alias=alias, **kwargs)
 
 
-def MessageHistory() -> RedisChatMessageHistory:
-    return ContextAwareMessageHistory(
+def FixedMessageHistory() -> RedisChatMessageHistory:
+    return PybotMessageHistory(
+        url=str(settings.redis_om_url),
+        key_prefix="pybot:fixed:message",
+        session_id="sid",  # a fake session id as it is required
+    )
+
+
+def MessageHistory(
+    history: Annotated[RedisChatMessageHistory, Depends(FixedMessageHistory)]
+) -> RedisChatMessageHistory:
+    return PybotMessageHistory(
+        fixed_messge_history=history,
         url=str(settings.redis_om_url),
         key_prefix="pybot:messages:",
         session_id="sid",  # a fake session id as it is required
@@ -46,13 +58,11 @@ def MessageHistory() -> RedisChatMessageHistory:
 def ChatMemory(
     history: Annotated[RedisChatMessageHistory, Depends(MessageHistory)]
 ) -> BaseMemory:
-    return ConversationBufferWindowMemory(
-        human_prefix=HUMAN_PREFIX,
-        ai_prefix=AI_PREFIX,
+    return PybotMemory(
         memory_key="history",
         input_key="input",
         output_key="output",
-        chat_memory=history,
+        history=history,
         return_messages=True,
     )
 
@@ -71,8 +81,8 @@ def Llm() -> BaseLLM:
     )
 
 
-def FakeCodeSandboxChain(
-    history: Annotated[RedisChatMessageHistory, Depends(MessageHistory)],
+def ToolOpeningRemarksChain(
+    history: Annotated[RedisChatMessageHistory, Depends(FixedMessageHistory)],
 ) -> Chain:
     memory = ConversationBufferWindowMemory(
         human_prefix=HUMAN_PREFIX,
@@ -83,4 +93,4 @@ def FakeCodeSandboxChain(
         chat_memory=history,
         return_messages=True,
     )
-    return FakeUseToolChain.from_memory(memory=memory)
+    return OpeningRemarksChain.from_memory(memory=memory)
