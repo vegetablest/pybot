@@ -86,6 +86,10 @@ Sure, I can help you with that. Let's start by examining the initial rows of the
                         case "stream":
                             result = response.content.text
                             break
+                        case "display_data":
+                            # TODO: I haven't figured out how to deal with it yet.
+                            # image/jpeg; image/gif; ……
+                            result = "data:image/png;" + response.content.data.image_png
                         case _:
                             # debug because we don't handle many message types like status
                             logger.debug(f"Unhandled message type: {response.msg_type}")
@@ -126,6 +130,9 @@ Sure, I can help you with that. Let's start by examining the initial rows of the
                             result = response.content.data.text_plain
                         case "stream":
                             result = response.content.text
+                        case "display_data":
+                            # TODO: I haven't figured out how to deal with it yet.
+                            result = response.content.data.image_png
                         case "status":
                             if response.content.execution_state == "idle":
                                 # idle means the kernel has finished executing

@@ -136,6 +136,17 @@ class ExecutionResultContent(BaseModel):
     execution_count: int
 
 
+class DisplayData(BaseModel):
+    text_plain: str = Field(alias="text/plain")
+    image_png: str = Field(alias="image/png")
+
+
+class ExecutionDisplayDataContent(BaseModel):
+    data: DisplayData
+    metadata: dict
+    execution_count: int
+
+
 class ExecutionResponse(BaseModel):
     header: ExecutionHeader
     msg_id: str
@@ -145,7 +156,7 @@ class ExecutionResponse(BaseModel):
     Identical to header.msg_type."""
     parent_header: ExecutionHeader
     metadata: dict
-    content: ExecutionStatusContent | ExecutionReplyContent | ExecutionInputContent | StreamContent | ErrorContent | ExecutionResultContent
+    content: ExecutionStatusContent | ExecutionReplyContent | ExecutionInputContent | StreamContent | ErrorContent | ExecutionResultContent | ExecutionDisplayDataContent
     buffers: list
     channel: str
     """I see there's 'iopub' and 'shell', don't know if there's more."""
